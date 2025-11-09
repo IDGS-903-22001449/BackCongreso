@@ -172,3 +172,4 @@ D:\Documentos\INGENIERIA\10mo Cuatri\Aplicaciones WEB progresivas\Practicas proy
 D:\Documentos\INGENIERIA\10mo Cuatri\Aplicaciones WEB progresivas\Practicas proyectos\app-congreso\app-congreso\obj\Debug\net9.0\app-congreso.pdb
 D:\Documentos\INGENIERIA\10mo Cuatri\Aplicaciones WEB progresivas\Practicas proyectos\app-congreso\app-congreso\obj\Debug\net9.0\app-congreso.genruntimeconfig.cache
 D:\Documentos\INGENIERIA\10mo Cuatri\Aplicaciones WEB progresivas\Practicas proyectos\app-congreso\app-congreso\obj\Debug\net9.0\ref\app-congreso.dll
+D:\Documentos\INGENIERIA\10mo Cuatri\Aplicaciones WEB progresivas\Practicas proyectos\app-congreso\app-congreso\obj\Debug\net9.0\app-congreso.sourcelink.json
