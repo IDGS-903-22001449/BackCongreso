@@ -1,91 +1,67 @@
-﻿using app_congreso.Data;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using app_congreso.Data;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ================================
-// 1️⃣ Configurar la cadena de conexión
-// ================================
-string connectionString;
-
-// Obtener la variable de entorno DATABASE_URL de Render
-var databaseUrl = Environment.GetEnvironmentVariable("postgresql://congresodb_qb0w_user:Zx9qjumL8Jv53lbBXDddrUzvCQ3Mlsv7@dpg-d4817pndiees739lr940-a.oregon-postgres.render.com/congresodb_qb0w\r\n");
-
-if (!string.IsNullOrEmpty(databaseUrl))
+// ------------------------
+// CORS: permitir tu frontend
+// ------------------------
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
 {
-    // Convertir DATABASE_URL (postgres://usuario:pass@host:port/db) a Npgsql
-    var uri = new Uri(databaseUrl);
-    var userInfo = uri.UserInfo.Split(':');
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("https://congresoexamen.netlify.app")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
 
-    var npgsqlBuilder = new NpgsqlConnectionStringBuilder
-    {
-        Host = uri.Host,
-        Port = uri.Port,
-        Username = userInfo[0],
-        Password = userInfo[1],
-        Database = uri.AbsolutePath.TrimStart('/'),
-        SslMode = SslMode.Require,
-        TrustServerCertificate = true,
-        Pooling = true
-    };
+// ------------------------
+// Parsear DATABASE_URL de Render
+// ------------------------
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-    connectionString = npgsqlBuilder.ToString();
-}
-else
+if (string.IsNullOrEmpty(databaseUrl))
 {
-    // Fallback para desarrollo local usando appsettings.json
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    throw new Exception("No se encontró la variable de entorno DATABASE_URL");
 }
 
-// Registrar DbContext con Npgsql
+var uri = new Uri(databaseUrl);
+var userInfo = uri.UserInfo.Split(':');
+
+var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+{
+    Host = uri.Host,
+    Port = uri.Port,
+    Username = userInfo[0],
+    Password = userInfo[1],
+    Database = uri.AbsolutePath.TrimStart('/'),
+    SslMode = SslMode.Require,
+    TrustServerCertificate = true
+};
+
+string connectionString = npgsqlBuilder.ToString();
+
+// ------------------------
+// Configurar DbContext
+// ------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// ================================
-// 2️⃣ Configurar servicios
-// ================================
+// Agregar controladores
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// ================================
-// 3️⃣ Configurar CORS
-// ================================
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("CorsPolicy", policy =>
-    {
-        policy
-            .WithOrigins(
-                "https://congresoexamen.netlify.app", // frontend desplegado
-                "http://localhost:3000"               // frontend local
-            )
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
-// ================================
-// 4️⃣ Construir la app
-// ================================
 var app = builder.Build();
 
-// ================================
-// 5️⃣ Pipeline HTTP
-// ================================
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// ------------------------
+// Middleware
+// ------------------------
+app.UseCors(MyAllowSpecificOrigins);
 
-app.UseHttpsRedirection();
-
-// ⚡ Importante: CORS antes de Authentication/Authorization
-app.UseCors("CorsPolicy");
-
-app.UseAuthentication();
+app.UseRouting();
 app.UseAuthorization();
 
 app.MapControllers();
