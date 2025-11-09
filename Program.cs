@@ -1,9 +1,9 @@
-using app_congreso.Data;
+﻿using app_congreso.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Conexi�n con PostgreSQL
+// 1️⃣ Configurar servicios
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -11,9 +11,25 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// 2️⃣ Configurar CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", builder =>
+    {
+        builder
+            .WithOrigins(
+                "https://congresoexamen.netlify.app", // dominio de tu frontend
+                "http://localhost:3000" // dominio local para pruebas
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+// 3️⃣ Construir la app
 var app = builder.Build();
 
-// Configuraci�n del pipeline HTTP
+// 4️⃣ Pipeline HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -22,15 +38,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors(options =>
-{
-    options.AllowAnyOrigin();
-    options.AllowAnyMethod();
-    options.AllowAnyHeader();
-});
+// ⚡ Importante: CORS antes de Authorization
+app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();
