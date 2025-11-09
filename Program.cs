@@ -5,7 +5,7 @@ using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 
 // ------------------------
-// CORS: permitir tu frontend
+// Configurar CORS para tu frontend
 // ------------------------
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddCors(options =>
@@ -13,7 +13,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
                       policy =>
                       {
-                          policy.WithOrigins("https://congresoexamen.netlify.app")
+                          policy.WithOrigins("https://congresoexamen.netlify.app") // tu frontend
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
                       });
@@ -54,14 +54,37 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Agregar controladores
 builder.Services.AddControllers();
 
+// ------------------------
+// Swagger solo en desarrollo
+// ------------------------
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
+
+// ------------------------
+// Aplicar migraciones automáticamente al iniciar
+// ------------------------
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate(); // crea las tablas automáticamente si no existen
+}
 
 // ------------------------
 // Middleware
 // ------------------------
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+// Importante: CORS antes de Authorization y MapControllers
 app.UseCors(MyAllowSpecificOrigins);
 
-app.UseRouting();
 app.UseAuthorization();
 
 app.MapControllers();
